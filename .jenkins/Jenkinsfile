@@ -1,21 +1,61 @@
 pipeline {
     agent any
 
+    environment {
+        AWS_REGION = 'us-east-1'
+        TF_DIR = 'terraform'
+        EC2_USER = 'ec2-user'
+        KEY_PATH = '/var/jenkins_home/.ssh/your-key.pem'  // Make sure this exists
+    }
+
     stages {
-        stage('Clone') {
+        stage('Checkout') {
             steps {
-                git 'https://github.com/your-org/your-repo.git'
+                git 'https://github.com/your-username/aws-jenkins-cicd-project.git'
             }
         }
-        stage('Test') {
+
+        stage('Terraform Init & Apply') {
+            steps {
+                dir("${TF_DIR}") {
+                    sh 'terraform init'
+                    sh 'terraform apply -auto-approve'
+                }
+            }
+        }
+
+        stage('Get EC2 Public IP') {
+            steps {
+                script {
+                    def ec2_ip = sh(
+                        script: "terraform -chdir=${TF_DIR} output -raw instance_public_ip",
+                        returnStdout: true
+                    ).trim()
+                    env.EC2_IP = ec2_ip
+                    echo "Deployed EC2 IP: ${env.EC2_IP}"
+                }
+            }
+        }
+
+        stage('Run Tests') {
             steps {
                 sh 'bash tests/test.sh'
             }
         }
-        stage('Deploy') {
+
+        stage('Deploy Web App') {
             steps {
-                sh 'bash scripts/deploy.sh'
+                sh """
+                    scp -i ${KEY_PATH} -o StrictHostKeyChecking=no web-app/index.html ${EC2_USER}@${EC2_IP}:/tmp/index.html
+                    ssh -i ${KEY_PATH} -o StrictHostKeyChecking=no ${EC2_USER}@${EC2_IP} "sudo mv /tmp/index.html /usr/share/nginx/html/index.html"
+                """
             }
+        }
+    }
+
+    post {
+        always {
+            echo 'Pipeline completed.'
         }
     }
 }
