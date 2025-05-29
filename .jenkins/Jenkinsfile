@@ -12,7 +12,7 @@ pipeline {
         stage('Checkout') {
             steps {
                 git credentialsId: 'github-creds',
-                    url: 'https://github.com/your-username/aws-jenkins-cicd-project.git',
+                    url: 'https://github.com/sudhabec/Assignment.git',
                     branch: 'main'
             }
         }
