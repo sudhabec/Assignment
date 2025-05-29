@@ -49,11 +49,12 @@ pipeline {
 
         stage('Deploy Web App') {
             steps {
-                sh """
-                    scp -i ${KEY_PATH} -o StrictHostKeyChecking=no web-app/index.html ${EC2_USER}@${EC2_IP}:/tmp/index.html
-                    ssh -i ${KEY_PATH} -o StrictHostKeyChecking=no ${EC2_USER}@${EC2_IP} "sudo mv /tmp/index.html /usr/share/nginx/html/index.html"
-                """
-            }
+                sshagent(['aws-ssh-key']) {
+                    sh """
+                        scp -o StrictHostKeyChecking=no web-app/index.html ${EC2_USER}@${EC2_IP}:/tmp/index.html
+                        ssh -o StrictHostKeyChecking=no ${EC2_USER}@${EC2_IP} "sudo mv /tmp/index.html /usr/share/nginx/html/index.html"
+                    """
+                }
         }
     }
 
