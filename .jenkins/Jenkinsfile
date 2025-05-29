@@ -3,7 +3,7 @@ pipeline {
 
     environment {
         AWS_REGION = 'us-east-1'
-        TF_DIR = 'terraform'
+        TF_DIR = 'tettaform'
         EC2_USER = 'ec2-user'
         KEY_PATH = '/var/lib/jenkins_home/.ssh/awsdevops.pem'  // Make sure this exists
     }
